@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="./data/tweets.js"></script>
+  <script src="./save.js"></script>
+  <div id="app">
+    <el-container>
+      <el-header>
+        <h3>Rating Studio</h3>
+      </el-header>
+      <el-container>
+        <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
+          <el-menu :default-openeds="['1', '2']" :default-active="menuActiveIndex" @select="menuSelect">
+            <el-submenu index="1">
+              <template slot="title"><i class="el-icon-data-analysis"></i>Workspace</template>
+              <el-menu-item index="1-1"><i class="el-icon-s-data"></i>Tweets</el-menu-item>
+            </el-submenu>
+            <el-menu-item index="2"><i class="el-icon-download"></i><span>Doanload</span></el-menu-item>
+          </el-menu>
+        </el-aside>
+        <el-main>
+          <section v-if="menuActiveIndex === '1-1'">
+            <header>Tweets</header>
+            <el-card class="box-card" shadow="never">
+              <p>{{ currentIndex + 1 }} of {{ totalAmount }}</p>              
+              <el-card shadow="never">
+                <p>{{ tweets[currentIndex].tweet }}</p>
+              </el-card>
+              <div class="block rating">
+                <el-rate
+                  v-model="score"
+                  :colors="colors"
+                  :texts="texts"
+                  :max="max"
+                  show-text
+                  @change="rate"
+                >
+                </el-rate>
+              </div>
+            </el-card>
+            <el-button class="btn" v-if="currentIndex > 0" @click="back">
+              <i class="el-icon-back"></i>
+              Previous
+            </el-button>
+            <el-button class="btn" v-if="currentIndex < ratedAmount && currentIndex < totalAmount - 1" @click="next">
+              Next
+              <i class="el-icon-right"></i>
+            </el-button>
+            <el-button v-if="ratedAmount === totalAmount && currentIndex === totalAmount - 1" @click="download">
+              <i class="el-icon-download"></i>
+              Doanload my ratings ({{ ratedAmount }} of {{ totalAmount }})
+            </el-button>
+          </section>
+          <section v-if="menuActiveIndex === '2'">
+            <el-button @click="download">
+              <i class="el-icon-download"></i>
+              Doanload my ratings ({{ ratedAmount }} of {{ totalAmount }})
+            </el-button>
+          </section>
+        </el-main>
+      </el-container>
+    </el-container>
+  </div>
+</body>
+
+<style>
+html, body, #app, #app > .el-container {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+#app {
+  font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;
+}
+
+.el-header {
+  margin: 0;
+  box-shadow: 0px 1px 5px 1px rgb(238, 241, 246);
+  z-index: 1;
+}
+
+.el-card {
+  line-height: 1.5em;
+}
+
+.el-card p {
+  white-space: pre-line;
+}
+
+header {
+  margin-bottom: 10px;
+}
+
+.rating, .btn {
+  margin: 20px 0;
+}
+</style>
+
+<script>
+new Vue({
+  el: '#app',
+  data: {
+    tweets: data,
+    ratings: null,
+    score: null,
+    colors: { 4: '#2196f3', 5: '#99a9bf', 9: '#ff9900' },
+    max: 9,
+    texts: [
+      'Extremely Negative', 'Very Negative', 'Moderately Negative', 'Slightly Negative',
+      'Neutral',
+      'Slightly Positive', 'Moderately Positive', 'Very Positive', 'Extremely Positive',
+    ],
+    currentIndex: null,
+    ratedAmount: null,
+    totalAmount: null,
+    menuActiveIndex: '1-1'
+  },
+  created: function () {
+    this.initData();
+  },
+  watch: {
+    currentIndex: function() {
+      this.score = this.ratings[this.tweets[this.currentIndex].id] || null;
+    }
+  },
+  methods: {
+    initData() {
+      this.totalAmount = this.tweets.length;
+      this.getRatingDataFromStorage();
+      this.ratedAmount = Object.keys(this.ratings).length;
+      this.currentIndex = this.ratedAmount === this.totalAmount ? this.ratedAmount - 1 : this.ratedAmount;
+    },
+    directTo(route) {
+      this.route = route;
+    },
+    menuSelect(index) {
+      this.menuActiveIndex = index;
+    },
+    rate() {
+      this.ratings[this.tweets[this.currentIndex].id] = this.score;
+      if (this.currentIndex < this.totalAmount - 1) {
+        this.currentIndex = this.currentIndex + 1;
+      }
+      this.ratedAmount = Object.keys(this.ratings).length;
+      this.saveRatingDataToStorage();
+    },
+    back() {
+      this.currentIndex = this.currentIndex - 1;
+    },
+    next() {
+      if (this.currentIndex < this.totalAmount) {
+        this.currentIndex = this.currentIndex + 1;
+      }
+    },
+    saveRatingDataToStorage() {
+      localStorage.ratings = JSON.stringify(this.ratings);
+    },
+    getRatingDataFromStorage() {
+      this.ratings = (localStorage.ratings && JSON.parse(localStorage.ratings)) || {};
+    },
+    download() {
+      let data = [];
+      for (key in this.ratings) {
+        data += key + ': ' + this.ratings[key] + '\n';
+      }
+      save(data, 'ratings.txt');
+    }
+  }
+})
+</script>
+</html>
