@@ -2,7 +2,7 @@
 
 Rating tweet data.
 
-[Demo](http://lengyue.ink/rating/)
+[Demo](http://guxi11.com/rating/)
 
 ![demo](images/demo.png)
 
